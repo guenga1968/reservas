@@ -51,9 +51,12 @@ src/
 │   │   └── reports/               # Stats & charts
 │   ├── layout.tsx                 # Root layout (AuthProvider)
 │   └── globals.css                # Tailwind import
-├── components/ui/                 # Shared UI (currently empty)
+├── components/ui/Loading.tsx      # Shared loading spinner component
 ├── contexts/AuthContext.tsx        # Auth provider + useAuth hook
-└── lib/supabase.ts                # Supabase browser client singleton
+├── lib/
+│   ├── supabase.ts                # Supabase browser client singleton
+│   └── format.ts                  # formatPrice, formatDate, getStatusColor, getStatusLabel
+└── types/index.ts                 # Shared interfaces: Guest, Bungalow, Reservation, Stats
 supabase/schema.sql                # DB schema, RLS policies, RPC functions
 test-app.js                        # Playwright E2E test script
 ```
@@ -68,6 +71,7 @@ Path alias: `@/*` maps to `./src/*`.
 - No comments in code unless explicitly requested.
 - Prefer editing existing files over creating new ones.
 - Default export per page file: `export default function PageName() { ... }`.
+- Pages using `useSearchParams()` must be wrapped in `<Suspense fallback={<Loading />}>` (see `reservations/new/page.tsx`).
 
 ### Imports
 
@@ -75,14 +79,17 @@ Path alias: `@/*` maps to `./src/*`.
 - Named imports from React: `import { useState, useEffect } from 'react'`.
 - Type-only imports: `import type { Metadata } from 'next'`.
 - Third-party type imports: `import { User } from '@supabase/supabase-js'`.
+- Shared types from `@/types`: `import { Reservation, Guest } from '@/types'`.
+- Shared UI: `import Loading from '@/components/ui/Loading'`.
+- Format helpers from `@/lib/format`: `formatPrice`, `formatDate`, `getStatusColor`, `getStatusLabel`.
 
 ### Types
 
-- Use `interface` over `type` for object shapes.
-- Define interfaces at the top of the file, above the component.
+- Use `interface` over `type` for object shapes. Exception: `type` for unions like `ReservationStatus`.
+- Define interfaces at the top of the file, above the component, or in `src/types/index.ts` when shared.
 - Match Supabase column names exactly (snake_case): `check_in`, `full_name`, `created_at`.
 - Use TypeScript `strict: true` — always type function params and returns.
-- Duplicated interfaces across files is acceptable (e.g., `Reservation` defined in both list and detail pages).
+- Duplicated interfaces across files is acceptable (e.g., local `Bungalow` or `Guest` interfaces for select views).
 
 ### Naming
 
@@ -104,12 +111,31 @@ Path alias: `@/*` maps to `./src/*`.
 - Log unexpected errors with `console.error('Error:', err)`.
 - Supabase response destructuring: `const { data } = await query` or `const { data, error } = await query`.
 - Mutations: after insert/update, update local state directly instead of re-fetching.
+- Use `.maybeSingle()` instead of `.single()` when zero rows is a valid result (e.g., overlap checks).
+- RPC calls: `.rpc('function_name', { param_key: value })` — see `check_availability` in `reservations/new/page.tsx`.
+
+### Error Handling
+
+- Display user-facing errors as inline alert divs, not toasts:
+  ```tsx
+  {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md" role="alert">{error}</div>}
+  ```
+- Catch blocks: use `catch (err: unknown)` and narrow with `instanceof Error` when extracting `.message`.
+- Simpler catch blocks may use untyped `catch (err)` with `console.error('Error:', err)`.
+
+### Accessibility
+
+- Form inputs must have `<label htmlFor="...">` matching the input `id`.
+- Use `autoComplete` attributes on login form fields.
+- Active nav links use `aria-current="page"`.
+- Error/success banners use `role="alert"`.
+- Interactive elements should have `min-h-[44px]` for touch targets.
 
 ### Styling
 
 - Tailwind utility classes only — no CSS modules or styled-components.
 - Mobile-first responsive: default mobile styles, `lg:` breakpoint for desktop.
-- Color scheme: `indigo` primary, `green` success, `red` error/danger, `yellow` warning, `gray` neutral.
+- Color scheme: `indigo` primary, `green` success, `red` error/danger, `yellow`/`amber` warning, `gray` neutral.
 - Status badge pattern: `bg-{color}-100 text-{color}-800` with `px-2 py-0.5 rounded text-xs`.
 - Card pattern: `bg-white rounded-lg shadow p-4`.
 - Button pattern: `bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700`.
@@ -122,6 +148,7 @@ Path alias: `@/*` maps to `./src/*`.
 - Submit text changes: `{saving ? 'Guardando...' : 'Guardar'}`.
 - Validation: HTML `required` + custom checks before submit.
 - Form state object pattern: single `formData` state with multiple fields.
+- Use `e.preventDefault()` at the top of submit handlers.
 
 ### Supabase Queries
 
@@ -129,7 +156,7 @@ Path alias: `@/*` maps to `./src/*`.
 - Insert: `.insert({ ... }).select('id').single()` when you need the created row.
 - RPC calls: `.rpc('function_name', { param: value })`.
 - Filter: `.eq()`, `.in()`, `.gte()`, `.lte()`, `.or()`.
-- Single row: `.single()` at end of chain.
+- Single row: `.single()` at end of chain; `.maybeSingle()` when zero rows is valid.
 - Throw on error: `if (error) throw error` inside try/catch.
 
 ### Routing
@@ -158,3 +185,4 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 - WhatsApp copy: `navigator.clipboard.writeText(message)` with `alert()` feedback.
 - UI language: Spanish (Argentina) for all user-facing text.
 - Confirm before destructive actions: `if (!confirm('¿Estás seguro...?')) return`.
+- DB schema, RLS policies, and RPC functions are defined in `supabase/schema.sql`.
