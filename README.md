@@ -1,25 +1,95 @@
-# Welcome to Next.js
+# Gestor de Turnos - Alojamiento Temporario
 
-This is the most minimal starter for your Next.js project.
+Web app para gestionar reservas de un complejo de 4 bungalows.
 
-## Deploy your own
+## Características
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/vercel/next.js/tree/canary/examples/hello-world&project-name=hello-world&repository-name=hello-world)
+- ✅ Autenticación de administrador
+- ✅ Gestión de reservas (crear, editar, eliminar)
+- ✅ Calendario de disponibilidad
+- ✅ Historial de huéspedes
+- ✅ Botón para copiar mensaje de WhatsApp
+- ✅ Reportes y estadísticas
+- ✅ Diseño responsive (móvil-first)
 
-## How to use
+## Tech Stack
 
-Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) with [npm](https://docs.npmjs.com/cli/init), [Yarn](https://yarnpkg.com/lang/en/docs/cli/create/), or [pnpm](https://pnpm.io) to bootstrap the example:
+- **Frontend**: Next.js 14 + TypeScript + Tailwind CSS
+- **Backend**: Supabase (Auth + Database)
+- **Hosting**: Vercel
+
+## Configuración
+
+### 1. Crear proyecto Supabase
+
+1. Ve a [supabase.com](https://supabase.com) e inicia sesión
+2. Crea un nuevo proyecto
+3. Ve a **SQL Editor** y ejecuta el script en `supabase/schema.sql`
+4. Ve a **Settings > API** y copia:
+   - Project URL
+   - `service_role` key (para crear usuario admin)
+
+### 2. Configurar variables de entorno
+
+Copia el archivo `.env.local.example` a `.env.local`:
 
 ```bash
-npx create-next-app --example hello-world hello-world-app
+NEXT_PUBLIC_SUPABASE_URL=tu_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
 ```
+
+### 3. Crear usuario administrador
+
+En Supabase, ve a **Authentication > Users** y crea un usuario con email y contraseña.
+
+### 4. Ejecutar localmente
 
 ```bash
-yarn create next-app --example hello-world hello-world-app
+npm run dev
 ```
 
-```bash
-pnpm create next-app --example hello-world hello-world-app
+La app estará en `http://localhost:3000`
+
+## Estructura del Proyecto
+
+```
+src/
+├── app/
+│   ├── (auth)/login/       # Página de login
+│   ├── (dashboard)/        # Dashboard protegido
+│   │   ├── dashboard/      # Página principal
+│   │   ├── reservations/   # Gestión de reservas
+│   │   ├── guests/        # Historial de huéspedes
+│   │   ├── calendar/      # Calendario
+│   │   └── reports/       # Reportes
+│   ├── layout.tsx
+│   └── page.tsx
+├── contexts/
+│   └── AuthContext.tsx     # Auth provider
+└── lib/
+    └── supabase.ts        # Cliente Supabase
 ```
 
-Deploy it to the cloud with [Vercel](https://vercel.com/new?utm_source=github&utm_medium=readme&utm_campaign=next-example) ([Documentation](https://nextjs.org/docs/deployment)).
+## Deploy a Vercel
+
+1. Sube el código a GitHub
+2. Ve a [vercel.com](https://vercel.com) e importa el repositorio
+3. Configura las variables de entorno en Vercel
+4. Deploy automático
+
+## Uso
+
+1. El administrador recibe llamada preguntando por disponibilidad
+2. Abre la app desde el celular
+3. Consulta el calendario para ver bungalows libres
+4. Crea la reserva con datos del huésped y precio
+5. Toca "Copiar WhatsApp" y pega el mensaje para enviar
+
+## Horarios
+
+- Check-in: 11:30 hs
+- Check-out: 10:00 hs
+
+## Licencia
+
+MIT
